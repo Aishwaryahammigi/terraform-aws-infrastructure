@@ -4,7 +4,7 @@
 This project provisions a complete, production-grade AWS cloud infrastructure using Terraform (Infrastructure as Code). All resources are created automatically with a single command — no manual clicking in the AWS Console.
 
 ## Live Demo
-Access the live web application: http://terraform-web-alb-812605928.ap-south-1.elb.amazonaws.com
+After running `terraform apply`, the live URL is printed as output: http://terraform-web-alb-811225162.ap-south-1.elb.amazonaws.com/
 
 ## Architecture
 ![Architecture Diagram](architecture.svg)
