@@ -4,6 +4,7 @@
 This project provisions a complete AWS cloud infrastructure using Terraform (Infrastructure as Code). All resources are created automatically with a single command — no manual clicking in the AWS Console.
 
 ## Architecture
+![Architecture Diagram](architecture.svg)
 - VPC with CIDR block 10.0.0.0/16
 - Public Subnet (10.0.1.0/24) with Internet access
 - Private Subnet (10.0.2.0/24) for internal resources
