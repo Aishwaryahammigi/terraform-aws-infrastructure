@@ -49,6 +49,24 @@ resource "aws_subnet" "private" {
   }
 }
 
+# Second Public Subnet (for ALB)
+resource "aws_subnet" "public2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.3.0/24"
+  availability_zone       = "ap-south-1b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public-subnet-2"
+  }
+}
+
+# Associate Route Table with Public Subnet 2
+resource "aws_route_table_association" "public2" {
+  subnet_id      = aws_subnet.public2.id
+  route_table_id = aws_route_table.public.id
+}
+
 # Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
@@ -143,6 +161,59 @@ resource "aws_instance" "web" {
 output "ec2_public_ip" {
   value = aws_instance.web.public_ip
   description = "Public IP of the web server"
+}
+
+# Application Load Balancer
+resource "aws_lb" "web_alb" {
+  name               = "terraform-web-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.web_sg.id]
+  subnets            = [aws_subnet.public.id, aws_subnet.public2.id]
+
+  tags = {
+    Name = "terraform-web-alb"
+  }
+}
+
+# Target Group
+resource "aws_lb_target_group" "web_tg" {
+  name     = "terraform-web-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  health_check {
+    path                = "/"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    interval            = 30
+  }
+}
+
+# Attach EC2 to Target Group
+resource "aws_lb_target_group_attachment" "web" {
+  target_group_arn = aws_lb_target_group.web_tg.arn
+  target_id        = aws_instance.web.id
+  port             = 80
+}
+
+# Listener
+resource "aws_lb_listener" "web" {
+  load_balancer_arn = aws_lb.web_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.web_tg.arn
+  }
+}
+
+# Output ALB DNS
+output "alb_dns_name" {
+  value       = aws_lb.web_alb.dns_name
+  description = "Load Balancer URL"
 }
 
 # S3 Bucket for Terraform Remote State
