@@ -14,12 +14,12 @@ terraform {
 }
 
 provider "aws" {
-  region = "ap-south-1"
+  region = var.aws_region
 }
 
 # Create a VPC
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.vpc_cidr
 
   tags = {
     Name = "terraform-vpc"
@@ -29,7 +29,7 @@ resource "aws_vpc" "main" {
 # Public Subnet
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
+  cidr_block              = var.public_subnet_cidr
   availability_zone       = "ap-south-1a"
   map_public_ip_on_launch = true
 
@@ -41,7 +41,7 @@ resource "aws_subnet" "public" {
 # Private Subnet
 resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.2.0/24"
+  cidr_block        = var.private_subnet_cidr
   availability_zone = "ap-south-1a"
 
   tags = {
@@ -52,7 +52,7 @@ resource "aws_subnet" "private" {
 # Second Public Subnet (for ALB)
 resource "aws_subnet" "public2" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.3.0/24"
+  cidr_block              = var.public_subnet2_cidr
   availability_zone       = "ap-south-1b"
   map_public_ip_on_launch = true
 
@@ -130,8 +130,8 @@ resource "aws_security_group" "web_sg" {
 
 # EC2 Instance
 resource "aws_instance" "web" {
-  ami                    = "ami-0f58b397bc5c1f2e8"
-  instance_type          = "t3.micro"
+  ami                    = var.ami_id
+  instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
 
@@ -179,8 +179,8 @@ resource "aws_lb" "web_alb" {
 # Launch Template
 resource "aws_launch_template" "web" {
   name_prefix   = "terraform-web-"
-  image_id      = "ami-0f58b397bc5c1f2e8"
-  instance_type = "t3.micro"
+  image_id      = var.ami_id
+  instance_type = var.instance_type
 
   network_interfaces {
     associate_public_ip_address = true
