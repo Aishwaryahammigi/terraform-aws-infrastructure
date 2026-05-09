@@ -157,12 +157,6 @@ resource "aws_instance" "web" {
   }
 }
 
-# Output EC2 public IP
-output "ec2_public_ip" {
-  value = aws_instance.web.public_ip
-  description = "Public IP of the web server"
-}
-
 # Application Load Balancer
 resource "aws_lb" "web_alb" {
   name               = "terraform-web-alb"
@@ -319,12 +313,6 @@ resource "aws_lb_listener" "web" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.web_tg.arn
   }
-}
-
-# Output ALB DNS
-output "alb_dns_name" {
-  value       = aws_lb.web_alb.dns_name
-  description = "Load Balancer URL"
 }
 
 # S3 Bucket for Terraform Remote State
