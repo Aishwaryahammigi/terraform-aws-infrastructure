@@ -7,7 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "terraform-state-aishwarya-2026"
+    bucket = "terraform-state-aishwarya-2026-v2"
     key    = "terraform.tfstate"
     region = "ap-south-1"
   }
@@ -124,7 +124,11 @@ resource "aws_instance" "web" {
 
 # S3 Bucket for Terraform Remote State
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "terraform-state-aishwarya-2026"
+  bucket = "terraform-state-aishwarya-2026-v2"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   tags = {
     Name = "terraform-state-bucket"
