@@ -117,9 +117,32 @@ resource "aws_instance" "web" {
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
 
+  user_data = <<-EOF
+              #!/bin/bash
+              apt-get update -y
+              apt-get install -y nginx
+              systemctl start nginx
+              systemctl enable nginx
+              echo '<!DOCTYPE html>
+              <html>
+              <head><meta charset="UTF-8"><title>Terraform AWS</title></head>
+              <body>
+              <h1>Terraform Deployed AWS Infrastructure</h1>
+              <p>Deployed by: Aishwarya Hammigi</p>
+              <p>Tech Stack: Terraform + AWS EC2 + VPC</p>
+              </body>
+              </html>' > /var/www/html/index.html
+              EOF
+
   tags = {
     Name = "terraform-web-server"
   }
+}
+
+# Output EC2 public IP
+output "ec2_public_ip" {
+  value = aws_instance.web.public_ip
+  description = "Public IP of the web server"
 }
 
 # S3 Bucket for Terraform Remote State
