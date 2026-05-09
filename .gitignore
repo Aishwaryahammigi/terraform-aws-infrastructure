@@ -1,0 +1,6 @@
+# Terraform files to NOT upload to GitHub
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
