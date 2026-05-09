@@ -176,6 +176,61 @@ resource "aws_lb" "web_alb" {
   }
 }
 
+# Launch Template
+resource "aws_launch_template" "web" {
+  name_prefix   = "terraform-web-"
+  image_id      = "ami-0f58b397bc5c1f2e8"
+  instance_type = "t3.micro"
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.web_sg.id]
+  }
+
+  user_data = base64encode(<<-EOF
+              #!/bin/bash
+              apt-get update -y
+              apt-get install -y nginx
+              systemctl start nginx
+              systemctl enable nginx
+              echo '<!DOCTYPE html>
+              <html>
+              <head><meta charset="UTF-8"><title>Terraform AWS</title></head>
+              <body>
+              <h1>Terraform Deployed AWS Infrastructure</h1>
+              <p>Deployed by: Aishwarya Hammigi</p>
+              <p>Tech Stack: Terraform + AWS EC2 + VPC + ALB + Auto Scaling</p>
+              </body>
+              </html>' > /var/www/html/index.html
+              EOF
+  )
+
+  tags = {
+    Name = "terraform-web-template"
+  }
+}
+
+# Auto Scaling Group
+resource "aws_autoscaling_group" "web" {
+  name                = "terraform-web-asg"
+  desired_capacity    = 1
+  max_size            = 3
+  min_size            = 1
+  target_group_arns   = [aws_lb_target_group.web_tg.arn]
+  vpc_zone_identifier = [aws_subnet.public.id, aws_subnet.public2.id]
+
+  launch_template {
+    id      = aws_launch_template.web.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "terraform-asg-instance"
+    propagate_at_launch = true
+  }
+}
+
 # Target Group
 resource "aws_lb_target_group" "web_tg" {
   name     = "terraform-web-tg"
