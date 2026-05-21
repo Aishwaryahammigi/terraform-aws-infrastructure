@@ -128,20 +128,21 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-# EC2 Instance
+# Key Pair
+resource "aws_key_pair" "web" {
+  key_name   = "job-portal-key"
+  public_key = file("C:/Users/AISHWARYA G H/.ssh/job-portal-key2.pub")
+}
+
 resource "aws_instance" "web" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
+  key_name               = aws_key_pair.web.key_name
 
   user_data = <<-EOF
               #!/bin/bash
-              apt-get update -y
-              apt-get install -y docker.io
-              systemctl start docker
-              systemctl enable docker
-              docker pull aishwaryahammigi/job-portal-devops:latest
               docker run -d -p 80:80 aishwaryahammigi/job-portal-devops:latest
               EOF
 
@@ -176,11 +177,6 @@ resource "aws_launch_template" "web" {
 
   user_data = base64encode(<<-EOF
               #!/bin/bash
-              apt-get update -y
-              apt-get install -y docker.io
-              systemctl start docker
-              systemctl enable docker
-              docker pull aishwaryahammigi/job-portal-devops:latest
               docker run -d -p 80:80 aishwaryahammigi/job-portal-devops:latest
               EOF
   )
@@ -303,10 +299,11 @@ resource "aws_lb_listener" "web" {
 
 # S3 Bucket for Terraform Remote State
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "terraform-state-aishwarya-2026-v2"
+  bucket        = "terraform-state-aishwarya-2026-v2"
+  force_destroy = true
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 
   tags = {
@@ -320,5 +317,15 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
 
   versioning_configuration {
     status = "Enabled"
+  }
+}
+
+# Elastic IP
+resource "aws_eip" "web" {
+  instance = aws_instance.web.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "terraform-web-eip"
   }
 }

@@ -27,3 +27,8 @@ output "security_group_id" {
   description = "ID of the security group"
   value       = aws_security_group.web_sg.id
 }
+
+output "elastic_ip" {
+  description = "Static Elastic IP of web server"
+  value       = aws_eip.web.public_ip
+}
