@@ -5,12 +5,6 @@ terraform {
       version = "~> 5.0"
     }
   }
-
-  backend "s3" {
-    bucket = "terraform-state-aishwarya-2026-v2"
-    key    = "terraform.tfstate"
-    region = "ap-south-1"
-  }
 }
 
 provider "aws" {
@@ -61,12 +55,6 @@ resource "aws_subnet" "public2" {
   }
 }
 
-# Associate Route Table with Public Subnet 2
-resource "aws_route_table_association" "public2" {
-  subnet_id      = aws_subnet.public2.id
-  route_table_id = aws_route_table.public.id
-}
-
 # Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
@@ -93,6 +81,12 @@ resource "aws_route_table" "public" {
 # Associate Route Table with Public Subnet
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+# Associate Route Table with Public Subnet 2
+resource "aws_route_table_association" "public2" {
+  subnet_id      = aws_subnet.public2.id
   route_table_id = aws_route_table.public.id
 }
 
@@ -134,6 +128,7 @@ resource "aws_key_pair" "web" {
   public_key = file("C:/Users/AISHWARYA G H/.ssh/job-portal-key2.pub")
 }
 
+# EC2 Instance
 resource "aws_instance" "web" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
@@ -151,6 +146,16 @@ resource "aws_instance" "web" {
   }
 }
 
+# Elastic IP
+resource "aws_eip" "web" {
+  instance = aws_instance.web.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "terraform-web-eip"
+  }
+}
+
 # Application Load Balancer
 resource "aws_lb" "web_alb" {
   name               = "terraform-web-alb"
@@ -161,6 +166,40 @@ resource "aws_lb" "web_alb" {
 
   tags = {
     Name = "terraform-web-alb"
+  }
+}
+
+# Target Group
+resource "aws_lb_target_group" "web_tg" {
+  name     = "terraform-web-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  health_check {
+    path                = "/"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    interval            = 30
+  }
+}
+
+# Attach EC2 to Target Group
+resource "aws_lb_target_group_attachment" "web" {
+  target_group_arn = aws_lb_target_group.web_tg.arn
+  target_id        = aws_instance.web.id
+  port             = 80
+}
+
+# Listener
+resource "aws_lb_listener" "web" {
+  load_balancer_arn = aws_lb.web_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.web_tg.arn
   }
 }
 
@@ -261,71 +300,4 @@ resource "aws_cloudwatch_metric_alarm" "low_cpu" {
   }
 
   alarm_actions = [aws_autoscaling_policy.scale_down.arn]
-}
-
-# Target Group
-resource "aws_lb_target_group" "web_tg" {
-  name     = "terraform-web-tg"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
-
-  health_check {
-    path                = "/"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 30
-  }
-}
-
-# Attach EC2 to Target Group
-resource "aws_lb_target_group_attachment" "web" {
-  target_group_arn = aws_lb_target_group.web_tg.arn
-  target_id        = aws_instance.web.id
-  port             = 80
-}
-
-# Listener
-resource "aws_lb_listener" "web" {
-  load_balancer_arn = aws_lb.web_alb.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.web_tg.arn
-  }
-}
-
-# S3 Bucket for Terraform Remote State
-resource "aws_s3_bucket" "terraform_state" {
-  bucket        = "terraform-state-aishwarya-2026-v2"
-  force_destroy = true
-
-  lifecycle {
-    prevent_destroy = false
-  }
-
-  tags = {
-    Name = "terraform-state-bucket"
-  }
-}
-
-# Enable versioning on S3 bucket
-resource "aws_s3_bucket_versioning" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
-
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-# Elastic IP
-resource "aws_eip" "web" {
-  instance = aws_instance.web.id
-  domain   = "vpc"
-
-  tags = {
-    Name = "terraform-web-eip"
-  }
 }
