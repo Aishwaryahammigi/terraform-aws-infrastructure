@@ -138,18 +138,11 @@ resource "aws_instance" "web" {
   user_data = <<-EOF
               #!/bin/bash
               apt-get update -y
-              apt-get install -y nginx
-              systemctl start nginx
-              systemctl enable nginx
-              echo '<!DOCTYPE html>
-              <html>
-              <head><meta charset="UTF-8"><title>Terraform AWS</title></head>
-              <body>
-              <h1>Terraform Deployed AWS Infrastructure</h1>
-              <p>Deployed by: Aishwarya Hammigi</p>
-              <p>Tech Stack: Terraform + AWS EC2 + VPC</p>
-              </body>
-              </html>' > /var/www/html/index.html
+              apt-get install -y docker.io
+              systemctl start docker
+              systemctl enable docker
+              docker pull aishwaryahammigi/job-portal-devops:latest
+              docker run -d -p 80:80 aishwaryahammigi/job-portal-devops:latest
               EOF
 
   tags = {
@@ -184,18 +177,11 @@ resource "aws_launch_template" "web" {
   user_data = base64encode(<<-EOF
               #!/bin/bash
               apt-get update -y
-              apt-get install -y nginx
-              systemctl start nginx
-              systemctl enable nginx
-              echo '<!DOCTYPE html>
-              <html>
-              <head><meta charset="UTF-8"><title>Terraform AWS</title></head>
-              <body>
-              <h1>Terraform Deployed AWS Infrastructure</h1>
-              <p>Deployed by: Aishwarya Hammigi</p>
-              <p>Tech Stack: Terraform + AWS EC2 + VPC + ALB + Auto Scaling</p>
-              </body>
-              </html>' > /var/www/html/index.html
+              apt-get install -y docker.io
+              systemctl start docker
+              systemctl enable docker
+              docker pull aishwaryahammigi/job-portal-devops:latest
+              docker run -d -p 80:80 aishwaryahammigi/job-portal-devops:latest
               EOF
   )
 
