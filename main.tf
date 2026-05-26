@@ -122,22 +122,21 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-# Key Pair
-resource "aws_key_pair" "web" {
-  key_name   = "job-portal-key"
-  public_key = file("C:/Users/AISHWARYA G H/.ssh/job-portal-key2.pub")
-}
-
 # EC2 Instance
 resource "aws_instance" "web" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
-  key_name               = aws_key_pair.web.key_name
+  key_name               = "terraform-key"
 
   user_data = <<-EOF
               #!/bin/bash
+              apt-get update -y
+              apt-get install -y docker.io
+              systemctl start docker
+              systemctl enable docker
+              docker pull aishwaryahammigi/job-portal-devops:latest
               docker run -d -p 80:80 aishwaryahammigi/job-portal-devops:latest
               EOF
 
@@ -216,6 +215,11 @@ resource "aws_launch_template" "web" {
 
   user_data = base64encode(<<-EOF
               #!/bin/bash
+              apt-get update -y
+              apt-get install -y docker.io
+              systemctl start docker
+              systemctl enable docker
+              docker pull aishwaryahammigi/job-portal-devops:latest
               docker run -d -p 80:80 aishwaryahammigi/job-portal-devops:latest
               EOF
   )
