@@ -1,4 +1,5 @@
 # Automated AWS Infrastructure Provisioning using Terraform
+Updated deployment
 
 ## Overview
 This project provisions a complete, production-grade AWS cloud infrastructure using Terraform (Infrastructure as Code). All resources are created automatically with a single command — no manual clicking in the AWS Console.
